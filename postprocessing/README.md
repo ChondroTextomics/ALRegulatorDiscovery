@@ -1,0 +1,1 @@
+Folder that will contain the scripts neccessary to do the analysis and cleaning/filtering of the results given. this iis a more specific folder to the chondrogeneis project as we have decided to do an aggregation method fpr the classification and the GO coverage is specific to our project
