@@ -1,0 +1,1 @@
+Folder that will contain all of the scripts neccessary to recreate an active learning loop with uncertainty (BALD with MC-dropout) and diversity (clustering); as well as a version in which class weighthing is introduced for the BALD score
