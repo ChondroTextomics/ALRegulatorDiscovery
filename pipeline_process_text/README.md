@@ -4,6 +4,8 @@ This folder contains the scripts necessary to go from a PubMed-format query to a
 
 As configured here, it retrieves and processes PubMed articles related to chondrogenesis to obtain sentences that contain gene(s) and a chondrogenesis-related concept term, producing a training dataset for classifying those genes into regulators or non-regulators of chondrogenesis.
 
+Requirements for running this pipeline are provided in the `envs` folder.
+
 **Pipeline stages:**
 
 1. Retrieve PubMed article identifiers from predefined queries
