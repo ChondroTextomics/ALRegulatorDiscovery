@@ -23,7 +23,7 @@ Requirements for running this pipeline are provided in the `envs` folder.
 
 The final output of this repository is a sentence-level dataset of samples containing recognised genes and topic-specific (concept-defined) terminology.
 
-`comparisonResultsGNorm2.py` sits outside this main sequence — it's an optional validation utility for comparing intermediate GNorm2 outputs across separate runs (e.g. to sanity-check that two configurations produce consistent results where expected).
+`comparisonResultsGNorm2.py` sits outside this main sequence, it's an optional validation utility for comparing intermediate GNorm2 outputs across separate runs (e.g. to sanity-check that two configurations produce consistent results where expected).
 
 ---
 ## Files
