@@ -1,0 +1,13 @@
+## Environment — `pipeline_process_text`
+
+### Python
+- Python 3.10.20
+- See [`requirements_pipeline_process_text.txt`](./requirements_pipeline_process_text.txt) for package versions
+
+### System / external tools
+System used Ubuntu 24.04.4
+
+| Tool | Used Version | Notes |
+|---|---|---|
+| NCBI EDirect (esearch/efetch) | 24 | Unix-like shell required; Windows users need WSL. Install via [NCBI's script](https://ftp.ncbi.nlm.nih.gov/entrez/entrezdirect/install-edirect.sh) or `conda install bioconda::entrez-direct` |
+| Singularity | 3.8.6 | Used to transform a docker container into a singularity container on an HPC cluster |
