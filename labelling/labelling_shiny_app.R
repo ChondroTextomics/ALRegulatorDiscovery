@@ -118,9 +118,6 @@ ui <- fluidPage(
                h2("Selection File to Label", style = "color:#2196F3"),
                # Create a container for centering the selectInput
                div(class = "select-input-container", 
-                   #selectInput("person", "Select User",
-                   #            choices = c("Ana", "Jamie", "PlaceHolder"),
-                   #            selected = "PlaceHolder"),
                    shinyFilesButton("file", "Choose a file", "Select a file to label", multiple = FALSE),
                    verbatimTextOutput("chosen_file")
                  ),
