@@ -1,0 +1,12 @@
+## Environment — `labelling`
+
+### Python
+- Python 3.13.12 
+- See [`requirements_labelling.txt`](./requirements_labelling.txt) for package versions for python
+
+### R
+- R 4.5.2
+- See [`renv_labelling.lock`](./renv_labelling.lock) for package versions R
+
+### System / external tools
+System used Ubuntu 24.04.4
