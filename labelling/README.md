@@ -1,6 +1,6 @@
 ## Overview
 
-This folder contains the resources, scripts, and annotation rules for the manual curation and consensus revision of genes associated with chondrogenesis, and for modelling the classification NLP model in this repository.
+This folder contains the resources for the manual curation and consensus revision of genes associated with chondrogenesis
 
 Requirements for running this pipeline are provided in the `envs` folder.
 
@@ -14,7 +14,7 @@ Requirements for running this pipeline are provided in the `envs` folder.
 
 The files required to generate the inputs for both app.R can be found in this repository folder `al_loop`
 
-The final output of this repository is a labelled dataset of teh selected sentences done in `al_loop`
+The final output of this repository is a labelled dataset of the selected sentences done in `al_loop`
 
 ---
 ## Files
