@@ -7,7 +7,8 @@ codebase are archived on Zenodo:
 
 **This includes:**
 - Active learning annotation rounds (training and results, including the matched 
-  random-sampling baseline) — `alLoopIterations`
+  random-sampling baseline) — `alLoopIterations/`
+- Annotation files for the different curators - `annotationFiles/`
 - PMIDs used to construct the different data — `pubMedDataExtraction/`
 - Held out results of all modelse — `LLMs/`, `logisticRegressionClassificationHeldOut.csv`, `alLoopIterations`
 - Production model gene classification outputs and GO coverage analysis — 
