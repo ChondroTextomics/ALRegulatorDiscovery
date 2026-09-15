@@ -12,7 +12,7 @@ mkdir -p "$2"
 tail -n +2 "$1" | while IFS="," read -r distance; do
 	echo "Working on sample $sample"
 
-	output_file="$2/${sample}.csv"
+	output_file="$2/sample_${sample}.csv"
 
 	if [ -f "$output_file" ];then
 		sample=$((sample+1))
