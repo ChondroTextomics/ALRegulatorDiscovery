@@ -1,0 +1,16 @@
+## Environment — `al_loop`
+
+### Python
+- Python 3.10.0
+- See [`requirements_python_al_loop.txt `](./requirements_python_al_loop.txt ) for package versions
+
+### R
+- R 4.5.1
+- See [`renv_al_loop.lock`](./renv_al_loop.lock) for package versions
+
+### System / external tools
+System used Linux 8.10
+
+### Usage notes
+No technical need for GPU (but recommended for usage of huggingface)
+Some processes require a higher ammount of RAM
