@@ -186,8 +186,8 @@ def create_weighted_loss(weights):
 set_seed(args.seed)
 ## ---------------------------------------
 ## NLP Model and data-preprocessing
-tokenizer = AutoTokenizer.from_pretrained(os.path.join(args.tokenizer, "model_pubmedbert/tokenizer"))
-model = AutoModelForSequenceClassification.from_pretrained(os.path.join(args.model, "model_pubmedbert/model"),
+tokenizer = AutoTokenizer.from_pretrained(args.tokenizer)
+model = AutoModelForSequenceClassification.from_pretrained(args.model,
                                                            num_labels = 2,
                                                            local_files_only = True,
                                                            output_hidden_states = True)
