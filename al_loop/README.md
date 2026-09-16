@@ -223,18 +223,18 @@ _9\_testPredictions\_iter1.csv_
 
 ------------------
 
-### `poolFinetunnedModelClassification.py`
+### `finetunnedModelClassification.py`
 
 **Usage**
 
 ```bash
-python poolFinetunnedModelClassification -batch <file_classify> \
-                                         -model <path_finetuned_model> \
-                                         -tokenizer <path_finetuned_tokenizer> \
-                                         -batchNumber <number_file> \
-                                         -prefix <prefix_result_output> \
-                                         -prefixEmbeddings <prefix_model_embeddings> \
-                                         -out <folder_save_output>
+python finetunnedModelClassification -batch <file_classify> \
+                                     -model <path_finetuned_model> \
+                                     -tokenizer <path_finetuned_tokenizer> \
+                                     -batchNumber <number_file> \
+                                     -prefix <prefix_result_output> \
+                                     -prefixEmbeddings <prefix_model_embeddings> \
+                                     -out <folder_save_output>
 ```
 
 **Arguments**
