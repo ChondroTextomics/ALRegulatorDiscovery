@@ -9,3 +9,4 @@ The following pre-trained LLMs were benchmarked in this project. Model weights a
 | Qwen 30B | Instruct | [Qwen/Qwen3-30B-A3B-Instruct-2507-FP8](https://huggingface.co/Qwen/Qwen3-30B-A3B-Instruct-2507-FP8) | Quantized variant used for inference benchmarking |
 | Qwen 30B | Thinking | [Qwen/Qwen3-30B-A3B-Thinking-2507-FP8](https://huggingface.co/Qwen/Qwen3-30B-A3B-Thinking-2507-FP8) | Quantized variant used for inference benchmarking |
 | Meta 70B | Instruct | [hugging-quants/Meta-Llama-3.1-70B-Instruct-AWQ-INT4](https://huggingface.co/hugging-quants/Meta-Llama-3.1-70B-Instruct-AWQ-INT4) | AWQ-quantized variant used for inference benchmarking |
+| Logistic Regression | - | - | using model from sklearn package |
