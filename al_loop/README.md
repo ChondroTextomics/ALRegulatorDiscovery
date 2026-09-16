@@ -157,9 +157,9 @@ python trainingModelTestPredictionBALDPool.py -train sentencesToLabelShort_label
                                               -pool pool_short_nlpFormat.csv \
                                               -out ./results_loop \
                                               -seed 9 \
-                                              -model /home/user/nlp_study/models \
-                                              -tokenizer /home/user/nlp_study/models \
-                                              -iteration 1 \
+                                              -model /home/user/nlp_study/models/pubmedbert/model \
+                                              -tokenizer /home/user/nlp_study/models/pubmedbert/tokenizer \
+                                              -iteration 1 I am running a few minutes late; my previous meeting is running over.
                                               -epoch 1 \
                                               -iterMC 3 \
                                               -batch 8 \
