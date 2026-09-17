@@ -1,6 +1,6 @@
 # Using the Trained Model on New Abstracts
 
-This guide walks through using the already-trained model to classify genes in new abstracts, in three stages: turning new abstracts into a filtered sentence dataset (§1), reshaping that dataset into the model's expected input format (§2), and running the fine-tuned model to get a regulator/non-regulator label per gene (§3). Each section's output feeds directly into the next.
+This guide walks through using the already-trained model to classify genes in new abstracts, in three stages: turning new abstracts into a filtered sentence dataset (1), reshaping that dataset into the model's expected input format (2), and running the fine-tuned model to get a regulator/non-regulator label per gene (3). Each section's output feeds directly into the next.
 
 ## 1. Preprocessing: From PubMed to a Filtered Sentence Dataset
 
@@ -165,7 +165,7 @@ _filtered\_sentences\_nlpFormat.csv_ (output of 2.2, one row per gene)
 
 ## 3. Classifying the Genes (`al_loop/finetunnedModelClassification.py`)
 
-This runs the already fine-tuned model on `filtered_sentences_nlpFormat.csv` and gives each candidate gene a prediction (regulator [1] or not [0]) with the associated probabilities. This is the last stage for straightforward inference on new abstracts; the rest of `al_loop` (BALD scoring, clustering, hybrid sampling) exists to pick new sentences for human labelling during active learning.
+This runs the already fine-tuned model on `filtered_sentences_nlpFormat.csv` and gives each candidate gene a prediction (regulator [1] or not [0]) with the associated probabilities. This is the last stage for straightforward inference on new abstracts; the rest of `al_loop` (BALD scoring, clustering, and hybrid sampling) is used to select new sentences for human labelling during active learning.
 
 ```bash
 python finetunnedModelClassification.py \
@@ -174,13 +174,13 @@ python finetunnedModelClassification.py \
   -tokenizer /path/to/finetuned_model_tokenizer \
   -batchNumber 1 \
   -prefix classification_results \
-  -prefixEmbeddings classification_embeddings \
-  -out results_classification
+  -out results_classification \
+  -onlyClassification
 ```
 
 `-model`/`-tokenizer` point to a local copy of the fine-tuned model. The script loads it from disk rather than pulling it from the Hub directly, so it needs to be downloaded there first.
 
-`-batchNumber` just labels the output files for a given run and it matters when splitting a large pool with `batchingPoolDataset.py`, but for a single run any value (e.g. 1) works fine.
+`-batchNumber` just labels the output files for a given run, and it matters when splitting a large pool with `batchingPoolDataset.py`, but for a single run any value (e.g. 1) works fine.
 
 ---
 
