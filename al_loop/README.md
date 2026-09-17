@@ -697,3 +697,124 @@ _pool\_short\_iter2.csv_
 |68959|6|With the onset of chondrogenesis, a gradual transition to [TARGET][GENE][/TARGET] synthesis was observed.|['type II collagen']|['60']|['76']|['-']|['-']|['9606']|
 |...|...|...|...|...|...|...|...|...|
 |40015854|9|Transcriptome sequencing of larvae showed that FEN altered the expressions of multiple metabolic and nervous system pathways, including [TARGET][GENE][/TARGET] signaling pathway, lipid metabolism pathway, carbohydrate metabolism pathway, retinol metabolism pathway, and neuroactive ligand-receptor interaction pathway, demonstrating that FEN alters the normal development of zebrafish embryos, and multiple pathways mediating the FEN-induced developmental toxicity.|['PPAR']|['138']|['142']|['-']|['-']|['7955']|
+
+---
+---
+
+### `embedingsSBioBERT.py`
+
+> Used only once, at the very beginning of the AL loop (the initial/first iteration), to compute the embeddings needed by `coreSetExtraction.py` to select the first batch of sentences to label.
+
+**Usage**
+```bash
+python embedingsSBioBERT.py <input_file> <output_file> \
+                            -tokenizer <path_tokenizer> \
+                            -model <path_model> \
+                            [-batch <batch_size> -maxlength <max_sequence_length>]
+```
+
+**Arguments**
+
+| Argument | Type | Required | Description |
+|---|---|---|---|
+| `input` | `str` | Yes | CSV file with dataframe (must contain `pmid`, `number` and `text` columns) |
+| `output` | `str` | Yes | path to save the final CSV |
+| `-tokenizer` | `str` | Yes | path or name of the pretrained Hugging Face tokenizer |
+| `-model` | `str` | Yes | path or name of the pretrained Hugging Face model (must return token-level embeddings compatible with mean pooling, e.g. a sentence-transformer-style encoder such as SBioBERT) |
+| `-batch` | `int` | No | batch size used by the dataloader (default `100`) |
+| `-maxlength` | `int` | No | max sequence length used for tokenization/truncation (default `512`) |
+
+**Input example**
+
+```bash
+python embedingsSBioBERT.py pool_short.csv pool_short_embeddings.csv \
+                            -tokenizer /home/user/models/SBioBERT/tokenizer_SBioBERT \
+                            -model /home/user/models/SBioBERT/model_SBioBERT
+```
+
+_pool\_short.csv_
+|pmid|number|text|
+|---|---|---|
+|68959|2|This work describes an approach to monitor chondrogenesis of stage-24 chick limb mesodermal cells in vitro by analyzing the onset of type II collagen synthesis with carboxymethyl-cellulose chromatography, immunofluorescence, and radioimmunoassay.|
+|68959|6|With the onset of chondrogenesis, a gradual transition to type II collagen synthesis was observed.|
+|...|...|...|
+|40015854|9|Transcriptome sequencing of larvae showed that FEN altered the expressions of multiple metabolic and nervous system pathways, including PPAR signaling pathway, lipid metabolism pathway, carbohydrate metabolism pathway, retinol metabolism pathway, and neuroactive ligand-receptor interaction pathway, demonstrating that FEN alters the normal development of zebrafish embryos, and multiple pathways mediating the FEN-induced developmental toxicity.|
+
+**Output example**
+
+The `text` column is tokenized and passed through `-model` in batches (on GPU if available), and mean pooling (averaging token embeddings, weighted by the attention mask) produces one embedding vector per sentence. Two files are written: `output`, with the original `pmid`, `number`, `text` columns joined to the embedding columns (used as the `-embeddings` input for `coreSetExtraction.py`), and `<output_basename>_embeddings<ext>`, with only the embedding columns.
+
+_pool\_short\_embeddings.csv_
+|pmid|number|text|0|1|...|767|
+|---|---|---|---|---|---|---|
+|68959|2|This work describes an approach to monitor chondrogenesis of stage-24 chick limb mesodermal cells in vitro by analyzing the onset of type II collagen synthesis with carboxymethyl-cellulose chromatography, immunofluorescence, and radioimmunoassay.|0.12525174|0.073949404|...|0.33107397|
+|68959|6|With the onset of chondrogenesis, a gradual transition to type II collagen synthesis was observed.|-0.07557922|0.1796895|...|-0.24311118|
+|...|...|...|...|...|...|...|
+
+_pool\_short\_embeddings\_embeddings.csv_
+|0|1|...|767|
+|---|---|---|---|
+|0.12525174|0.073949404|...|0.33107397|
+|-0.07557922|0.1796895|...|-0.24311118|
+|...|...|...|...|
+
+------------------
+
+### `coreSetExtraction.py`
+
+> Used only once, at the very beginning of the AL loop (the initial/first iteration), to select the first batch of sentences to label from the embeddings produced by `embedingsSBioBERT.py`.
+
+**Usage**
+```bash
+python coreSetExtraction.py -embeddings <file_embeddings> \
+                            -selection <amount_sentences_to_select> \
+                            -metadata <file_metadata> \
+                            -output <path_output_file> \
+                            [-seed <random_seed>]
+```
+
+**Arguments**
+
+| Argument | Type | Required | Description |
+|---|---|---|---|
+| `-embeddings` | `str` | Yes | the main output file of `embedingsSBioBERT.py` (first column is used as the index, followed by `pmid`, `number`, `text` and then the embedding dimensions) |
+| `-selection` | `int` | Yes | number of sentences to select/return (cannot be greater than the number of rows in `-embeddings`) |
+| `-metadata` | `str` | Yes | file with the information of the sentences in `-embeddings` (must have the same number of rows, and contain `pmid`, `number` and `text` columns) |
+| `-output` | `str` | Yes | file to save the selected rows of the data |
+| `-seed` | `int` | No | random seed set for reproducible selection (default `42`) |
+
+**Input example**
+
+```bash
+python coreSetExtraction.py -embeddings pool_short_embeddings.csv \
+                            -selection 1 \
+                            -metadata pool_short_hybridSamplingResults.csv \
+                            -output pool_short_coreset.csv \
+                            -seed 9
+```
+
+_pool\_short\_embeddings.csv_
+|pmid|number|text|0|1|...|767|
+|---|---|---|---|---|---|---|
+|68959|2|This work describes an approach to monitor chondrogenesis of stage-24 chick limb mesodermal cells in vitro by analyzing the onset of type II collagen synthesis with carboxymethyl-cellulose chromatography, immunofluorescence, and radioimmunoassay.|0.12525174|0.073949404|...|0.33107397|
+|68959|6|With the onset of chondrogenesis, a gradual transition to type II collagen synthesis was observed.|-0.07557922|0.1796895|...|-0.24311118|
+|...|...|...|...|...|...|...|
+
+_pool\_short.csv_
+
+|pmid|number|text|gene|start|end|id|uniprotid|sa|
+|---|---|---|---|---|---|---|---|---|
+|68959|2|This work describes an approach to monitor chondrogenesis of stage-24 chick limb mesodermal cells in vitro by analyzing the onset of type II collagen synthesis with carboxymethyl-cellulose chromatography, immunofluorescence, and radioimmunoassay.|['type II collagen']|['135']|['151']|['395069']|['P02460']|['9031']|
+|68959|6|With the onset of chondrogenesis, a gradual transition to type II collagen synthesis was observed.|['type II collagen']|['60']|['76']|['-']|['-']|['9606']|
+|...|...|...|...|...|...|...|...|...|
+|40015854|9|Transcriptome sequencing of larvae showed that FEN altered the expressions of multiple metabolic and nervous system pathways, including PPAR signaling pathway, lipid metabolism pathway, carbohydrate metabolism pathway, retinol metabolism pathway, and neuroactive ligand-receptor interaction pathway, demonstrating that FEN alters the normal development of zebrafish embryos, and multiple pathways mediating the FEN-induced developmental toxicity.|['PPAR']|['138']|['142']|['-']|['-']|['7955']|
+
+**Output example**
+
+Starting from one randomly chosen sentence, the script greedily grows a "core set" of `-selection` sentences by repeatedly picking, from the remaining `-embeddings` rows, the one that is furthest (in cosine distance) from the sentences already chosen, so that the final selection covers the embedding space as diversely as possible. The `pmid`+`number`+`text` of the selected rows are then inner-merged back onto `-metadata` to recover the full row of information for each selected sentence.
+
+_pool\_short\_coreset.csv_
+
+|pmid|number|text|gene|start|end|id|uniprotid|sa|
+|---|---|---|---|---|---|---|---|---|
+|68959|2|This work describes an approach to monitor chondrogenesis of stage-24 chick limb mesodermal cells in vitro by analyzing the onset of type II collagen synthesis with carboxymethyl-cellulose chromatography, immunofluorescence, and radioimmunoassay.|['type II collagen']|['135']|['151']|['395069']|['P02460']|['9031']|
