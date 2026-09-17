@@ -23,8 +23,9 @@ parser.add_argument("-model", help = "path to the model already fine tunned", re
 parser.add_argument("-tokenizer", help = "path to the tokenizer", required = True)
 parser.add_argument("-batchNumber", help = "number of the batch that is being predicted, for name purposes", required = True, type = int)
 parser.add_argument("-prefix", help = "prefix of the file name to the number of batch and extension", required = True)
-parser.add_argument("-prefixEmbeddings", help = "prefix of the file name for the CLS embeddings to the number of batch and extension", required = True)
+parser.add_argument("-prefixEmbeddings", help = "prefix of the file name for the CLS embeddings to the number of batch and extension")
 parser.add_argument("-out", help = "folder where the batches will be saved", required = True) # Needs to be pre-done so running 1 batch will not influence th eother
+parser.add_argument("-onlyClassification", help = "if activated, only the file with the classification will given, no embeddings", action = "store_true")
 args = parser.parse_args()
 
 # Checks
@@ -34,9 +35,6 @@ if os.path.isfile(args.batch):
     if "text" not in pool.columns:
         print(f'ERROR: column "text" needs to be in file {args.batch}')
         sys.exit(1)
-    
-    if "labels" in pool.columns:
-        pool.drop(columns = ["labels"])
 
     output_pool = pool.copy(deep = True)
 else:
@@ -53,6 +51,10 @@ if not os.path.exists(args.model):
 
 if not os.path.exists(args.tokenizer):
     print(f"ERROR: folder {args.tokenizer} cannot be found")
+    sys.exit(1)
+
+if args.onlyClassification == False and args.prefixEmbeddings == None:
+    print("ERROR: -prefixEmbeddings is needed to give the embeddings of the data. If you dont want that file, activate the argument '-onlyClassification'")
     sys.exit(1)
 
 ## Functions
@@ -139,17 +141,20 @@ for batch in loader:
         # Get the logits of the batch
         logits = output.logits
         all_logits.extend(logits.cpu().numpy())
-        # Get the CLS embedding of the batch
-        cls_embeddings = output.hidden_states[-1][:, 0, :]
-        all_cls.extend(cls_embeddings.cpu().numpy())
+        if args.onlyClassification == False:
+            # Get the CLS embedding of the batch
+            cls_embeddings = output.hidden_states[-1][:, 0, :]
+            all_cls.extend(cls_embeddings.cpu().numpy())
 
 ## Add the predicted labels column
 output_pool = transform_logits(output_pool, all_logits)
 
 ## Extract the CLS embeddings of this batch for the future clustering
 #cls_embeddings = output.hidden_states[-1][:,0,:]
-output_embeddings = pd.DataFrame(all_cls) # I need to look how this works
+if args.onlyClassification == False:
+    output_embeddings = pd.DataFrame(all_cls) # I need to look how this works
 
 ## Save both dataframes
 output_pool.to_csv(os.path.join(args.out, f"{args.prefix}_{args.batchNumber}.csv"), index = False)
-output_embeddings.to_csv(os.path.join(args.out, f"{args.prefixEmbeddings}_{args.batchNumber}.csv"), index = False)
+if args.onlyClassification == False:
+    output_embeddings.to_csv(os.path.join(args.out, f"{args.prefixEmbeddings}_{args.batchNumber}.csv"), index = False)
