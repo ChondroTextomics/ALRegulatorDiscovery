@@ -233,8 +233,10 @@ python finetunnedModelClassification -batch <file_classify> \
                                      -tokenizer <path_finetuned_tokenizer> \
                                      -batchNumber <number_file> \
                                      -prefix <prefix_result_output> \
-                                     -prefixEmbeddings <prefix_model_embeddings> \
                                      -out <folder_save_output>
+                                     [-prefixEmbeddings <prefix_model_embeddings> \
+                                     -onlyClassification]
+                                     
 ```
 
 **Arguments**
@@ -246,8 +248,9 @@ python finetunnedModelClassification -batch <file_classify> \
 | `-tokenizer` | `str` | Yes | path to the tokenizer |
 | `-batchNumber` | `int` | Yes | number of the batch being predicted, used for naming the output files |
 | `-prefix` | `str` | Yes | prefix of the classification output file name, followed by the batch number and extension |
-| `-prefixEmbeddings` | `str` | Yes | prefix of the CLS embeddings output file name, followed by the batch number and extension |
+| `-prefixEmbeddings` | `str` | No, but necessary if -onlyClassification is not given | prefix of the CLS embeddings output file name, followed by the batch number and extension |
 | `-out` | `str` | Yes | folder where the outputs will be saved (must already exist) |
+| `-onlyClassification` | flag | No | if given, no CLS embedding file will be given, just the file with the classification|
 
 
 **Input Example**
