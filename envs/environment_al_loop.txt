@@ -8,8 +8,11 @@
 - R 4.5.1
 - See [`renv_al_loop.lock`](./renv_al_loop.lock) for package versions
 
-### System / external tools
+### System / external tools / models
 System used Linux 8.10
+The models used duting this loop are downlaoded from huggingface and used locally:
+ - microsoft/BiomedNLP-BiomedBERT-base-uncased-abstract-fulltext
+ - pritamdeka/S-BioBert-snli-multinli-stsb
 
 ### Usage notes
 No technical need for GPU (but recommended for usage of huggingface)
