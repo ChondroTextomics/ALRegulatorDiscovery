@@ -1,0 +1,23 @@
+## Environment — `benchmark_comparison`
+
+### Logistic Regression + Bootstrapping + Creation Datasets LLMs
+Used for model baseline, the bootstrapping scripts and the creation of the datasets for the LLMs
+
+ - Python 3.11.9 --> See [`requirements_lr_benchmarking.txt`](./requirements_lr_benchmarking.txt ) for package versions
+ - HuggingFace models: microsoft/BiomedNLP-BiomedBERT-base-uncased-abstract-fulltext
+
+### No or no specific quantisation LLMs
+Used for running Qwen models
+
+ - Python 3.10.0 --> See [`requirements_qwen_benchmarking.txt`](./requirements_qwen_benchmarking.txt ) for package versions
+ - HuggingFace models: Qwen/Qwen3-4B-Instruct-2507, Qwen/Qwen3-4B-Thinking-2507, Qwen/Qwen3-30B-A3B-Instruct-2507-FP8 and Qwen/Qwen3-30B-A3B-Thinking-2507-FP8
+
+### AWQ quantised LLMs
+Used for LLama which was quantised with an AWQ method
+
+ - Python 3.?? --> See [`requirements_llama_benchmarking.txt`](./requirements_llama_benchmarking.txt ) for package versions
+ - HuggingFace models: hugging-quants/Meta-Llama-3.1-70B-Instruct-AWQ-INT4
+ - CUDA Toolkit 13.0.2
+
+### System 
+System used Linux 8.10
