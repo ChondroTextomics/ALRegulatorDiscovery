@@ -818,3 +818,73 @@ _pool\_short\_coreset.csv_
 |pmid|number|text|gene|start|end|id|uniprotid|sa|
 |---|---|---|---|---|---|---|---|---|
 |68959|2|This work describes an approach to monitor chondrogenesis of stage-24 chick limb mesodermal cells in vitro by analyzing the onset of type II collagen synthesis with carboxymethyl-cellulose chromatography, immunofluorescence, and radioimmunoassay.|['type II collagen']|['135']|['151']|['395069']|['P02460']|['9031']|
+
+------------------
+
+### `bootstrapRetrain.py`
+
+> Used only on the final model and on the production PubMedBERT model, to obtain confidence intervals for their performance. It is **not** part of the AL loop, so it is not a big part of it and is never run between iterations.
+
+**Usage**
+```bash
+python bootstrapRetrain.py -data <file_dataset> \
+                           -out <prefix_output_files> \
+                           -model <path_hf_model> \
+                           -tokenizer <path_hf_tokenizer> \
+                           -batch <prediction_batch> \
+                           -outFolder <folder_results> \
+                           -iterations <number_bootstrap_iterations> \
+                           -cluster <column_1> [<column_2> ...] \
+                           [-seed <random_seed>]
+```
+
+**Arguments**
+
+| Argument | Type | Required | Description |
+|---|---|---|---|
+| `-data` | `str` | Yes | path to the dataset to bootstrap (must contain `text` and `labels` columns, plus the columns given in `-cluster`) |
+| `-out` | `str` | Yes | root of the output file names, e.g. `output_predictions_test`. The iteration number and extension are added |
+| `-model` | `str` | Yes | path to the (already trained) model folder |
+| `-tokenizer` | `str` | Yes | path to the tokenizer folder |
+| `-batch` | `int` | Yes | number of samples per batch during prediction |
+| `-outFolder` | `str` | Yes | folder where all of the output files are stored (created if it doesn't exist) |
+| `-iterations` | `int` | Yes | number of bootstrap resampling iterations (must be greater than 0) |
+| `-cluster` | `str` (one or more) | Yes in practice | columns that define a cluster (e.g. `pmid number`). Whole clusters are resampled together. The script is written for cluster bootstrapping, so it fails if this is not given |
+| `-seed` | `int` | No | random seed (default `26`) |
+
+**Input example**
+
+```bash
+python bootstrapRetrain.py -data validationDataset_short_nlpFormat.csv \
+                           -out bootstrap_test \
+                           -model results_loop/trained_model/ \
+                           -tokenizer results_loop/trained_model/ \
+                           -batch 8 \
+                           -outFolder results_bootstrap \
+                           -iterations 1000 \
+                           -cluster pmid number \
+                           -seed 9
+```
+
+_validationDataset\_short\_nlpFormat.csv_
+
+|pmid|number|text|labels|
+|---|---|---|---|
+|241677|12|Cells forming the regeneration blastema were [TARGET][GENE][/TARGET] reactive during the early formative phase, but with growth and development of the blastema into bulb and conic forms, these cells did not respond for this enzyme-activity.|0|
+|1314187|4|Synthesis of sulfated proteoglycans, an index of chondrogenesis, was inhibited by all three PDGF isoforms ([TARGET][GENE][/TARGET], [GENE], and [GENE]).|1|
+|1314187|4|Synthesis of sulfated proteoglycans, an index of chondrogenesis, was inhibited by all three PDGF isoforms ([GENE], [TARGET][GENE][/TARGET], and [GENE]).|1|
+|...|...|...|...|
+
+**Output example**
+
+Despite the name, the model is **not** retrained: it is loaded once and kept fixed. In each of the `-iterations` iterations the unique combinations of the `-cluster` columns are resampled with replacement (a cluster bootstrap, so all rows of a sampled cluster, e.g. all the genes of one sentence, are kept together and a cluster drawn twice appears twice), the resampled rows are predicted with the model (padded to a fixed length of 250 tokens), and the logits are transformed into `predicted_label` and probabilities. One file is written per iteration, `<outFolder>/<out>_<iteration>.csv` (iterations start at `0`), with all of the original columns plus the predictions. The performance metric of interest (e.g. F1 or AUC-ROC) is not calculated by this script: compute it on each file and take the percentiles of the resulting distribution (e.g. 2.5 and 97.5) as the confidence interval.
+
+_results\_bootstrap/bootstrap\_test\_0.csv_
+
+|pmid|number|text|labels|logits_0|logits_1|predicted_label|prob_0|prob_1|
+|---|---|---|---|---|---|---|---|---|
+|1314187|4|Synthesis of sulfated proteoglycans, an index of chondrogenesis, was inhibited by all three PDGF isoforms ([TARGET][GENE][/TARGET], [GENE], and [GENE]).|1|-0.0077759195|-0.1261672|0|0.5295633|0.47043672|
+|1314187|4|Synthesis of sulfated proteoglycans, an index of chondrogenesis, was inhibited by all three PDGF isoforms ([GENE], [TARGET][GENE][/TARGET], and [GENE]).|1|0.0212345|0.1345678|1|0.4716789|0.5283211|
+|241677|12|Cells forming the regeneration blastema were [TARGET][GENE][/TARGET] reactive during the early formative phase, but with growth and development of the blastema into bulb and conic forms, these cells did not respond for this enzyme-activity.|0|-0.058483087|-0.11627989|0|0.5144452|0.4855548|
+
+---
