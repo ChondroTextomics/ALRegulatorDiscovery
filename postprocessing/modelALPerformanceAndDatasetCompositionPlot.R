@@ -48,7 +48,7 @@ iter4 <- process_results_file("12_testPredictions_iter5.csv", "Iter 4")
 iter5_ht <- process_results_file("9_testPredictions_iter6_ht.csv", "Iter 5")
 iter6_ht <- process_results_file("7_testPredictions_iter7_own_ht.csv", "Iter 6")
 
-iter6_held_out <- process_results_file(held-out-dataset-resulst-iter6.csv", "Iter 6 (held out)")
+iter6_held_out <- process_results_file(held-out-dataset-resulst-iter6.csv, "Iter 6 (held out)")
 
 # need to change the value of the data_training column to be able to put it in the plot
 iter6_held_out[1, "data_training"] <- "Iter 6"
