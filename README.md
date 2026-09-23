@@ -46,7 +46,7 @@ This repo supports a few different starting points — pick the guide that match
 |---|---|
 | Reproduce the results in the paper | [`docs/reproduce-paper.md`](docs/reproduce-paper.md) |
 | Adapt the pipeline to a new biological process | [`docs/new-process.md`](docs/new-process.md) |
-| Use the trained model to classify new abstracts | [`docs/use-trained-model.md`](docs/use-trained-model.md) |
+| Use the trained model to classify new abstracts | [`guides/model-inference.md`](guides/model-inference.md) |
 
 ### 2. Set up an environment
 
