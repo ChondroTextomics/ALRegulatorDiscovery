@@ -39,7 +39,7 @@ process_results_file <- function(file_name, name_plot){
 
 
 # AL results ####
-setwd("C:\\Users\\amanhel\\OneDrive - The University of Liverpool\\Documents\\PhD\\ActiveLearning\\AL-entity\\plots")
+setwd("AL-entity/results")
 iter0 <- process_results_file("13_testPredictions_iter1.csv", "Core")
 iter1 <- process_results_file("30_testPredictions_iter2.csv", "Iter 1")
 iter2_w <- process_results_file("28_testPredictions_iter3.csv", "Iter 2")
@@ -48,8 +48,8 @@ iter4 <- process_results_file("12_testPredictions_iter5.csv", "Iter 4")
 iter5_ht <- process_results_file("9_testPredictions_iter6_ht.csv", "Iter 5")
 iter6_ht <- process_results_file("7_testPredictions_iter7_own_ht.csv", "Iter 6")
 
-iter6_held_out <- process_results_file("C:\\Users\\amanhel\\OneDrive - The University of Liverpool\\Documents\\PhD\\ActiveLearning\\AL-entity\\results\\held-out\\held-out-dataset-resulst-iter6.csv",
-                                       "Iter 6 (held out)")
+iter6_held_out <- process_results_file(held-out-dataset-resulst-iter6.csv", "Iter 6 (held out)")
+
 # need to change the value of the data_training column to be able to put it in the plot
 iter6_held_out[1, "data_training"] <- "Iter 6"
 iter6_heldout_long <- pivot_longer(iter6_held_out,
@@ -157,7 +157,7 @@ al_performance_loop
 
 # barplot data counts ####
 
-counts <- read.csv("C:\\Users\\amanhel\\OneDrive - The University of Liverpool\\Documents\\PhD\\ActiveLearning\\AL-entity\\data\\sentence_gene_number_al_loop.csv")
+counts <- read.csv("sentence_gene_number_al_loop.csv")
 
 counts_total <- counts[c("iteration","sentence","gene")]
 counts_long <- pivot_longer(
@@ -251,12 +251,12 @@ heldout_auc$Series <- "Active Learning"
 # adding random baseline to the metrics ####
 # this is for the supplementary material
 
-seed_3 <- read.csv("C:\\Users\\amanhel\\OneDrive - The University of Liverpool\\Documents\\PhD\\ActiveLearning\\AL-entity\\results\\baseline-random\\gene\\summary_performances_random_seed_3_replicas.csv")
-seed_6 <- read.csv("C:\\Users\\amanhel\\OneDrive - The University of Liverpool\\Documents\\PhD\\ActiveLearning\\AL-entity\\results\\baseline-random\\gene\\summary_performances_random_seed_6_replicas.csv")
-seed_8 <- read.csv("C:\\Users\\amanhel\\OneDrive - The University of Liverpool\\Documents\\PhD\\ActiveLearning\\AL-entity\\results\\baseline-random\\gene\\summary_performances_random_seed_8_replicas.csv")
-seed_11 <- read.csv("C:\\Users\\amanhel\\OneDrive - The University of Liverpool\\Documents\\PhD\\ActiveLearning\\AL-entity\\results\\baseline-random\\gene\\summary_performances_random_seed_11_replicas.csv")
-seed_26 <- read.csv("C:\\Users\\amanhel\\OneDrive - The University of Liverpool\\Documents\\PhD\\ActiveLearning\\AL-entity\\results\\baseline-random\\gene\\summary_performances_random_seed_26_replicas.csv")
-seed_30 <- read.csv("C:\\Users\\amanhel\\OneDrive - The University of Liverpool\\Documents\\PhD\\ActiveLearning\\AL-entity\\results\\baseline-random\\gene\\summary_performances_random_seed_30_replicas.csv")
+seed_3 <- read.csv("summary_performances_random_seed_3_replicas.csv")
+seed_6 <- read.csv("summary_performances_random_seed_6_replicas.csv")
+seed_8 <- read.csv("summary_performances_random_seed_8_replicas.csv")
+seed_11 <- read.csv("summary_performances_random_seed_11_replicas.csv")
+seed_26 <- read.csv("summary_performances_random_seed_26_replicas.csv")
+seed_30 <- read.csv("summary_performances_random_seed_30_replicas.csv")
 
 performance_seeds <- list("3" = seed_3,
                           "6" = seed_6,
@@ -381,7 +381,7 @@ final_plot_baseline_comparison <- wrap_plots(plots, ncol = 2) +
 final_plot_baseline_comparison
 
 # boxplots for random baseline and AL proportion of genes ####
-count_genes_random <- read.csv("C:\\Users\\amanhel\\OneDrive - The University of Liverpool\\Documents\\PhD\\ActiveLearning\\AL-entity\\results\\baseline-random\\baseline_random_gene_composition_trainingDataset.csv")
+count_genes_random <- read.csv("baseline_random_gene_composition_trainingDataset.csv")
 count_genes_random <- count_genes_random %>%
   rename(data_training = replica)
 count_genes_random$data_training <- replica_equivalent[as.character(count_genes_random$data_training)]
