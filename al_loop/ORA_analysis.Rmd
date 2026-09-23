@@ -1,0 +1,390 @@
+---
+title: "Over-Representation Analysis with ClusterProfiler (modified by me)"
+author: "Mohammed Khalfan (modified by Ana-Mariya Anhel Valdes)"
+date: "5/15/2019"
+output:
+  html_document:
+    df_print: paged
+df_print: paged
+---
+
+This R Notebook describes the implementation of over-representation analysis using the clusterProfiler package. For more information please see the full documentation here: https://bioconductor.org/packages/release/bioc/vignettes/clusterProfiler/inst/doc/clusterProfiler.html
+
+# Set the data folder
+```{r setup, include=FALSE}
+knitr::opts_knit$set(root.dir = "folder_data")
+```
+
+# Install and load packages
+```{r, message=F, warning=F}
+#install.packages("BiocManager")
+#BiocManager::install("clusterProfiler")
+#BiocManager::install("pathview")
+#install.packages("wordcloud")
+library(clusterProfiler)
+library(wordcloud)
+library(ggplot2) # to make the plots a little bit more pretty
+```
+
+# Annotations
+I'm using *D melanogaster* data, so I install and load the annotation "org.Dm.eg.db" below. See all annotations available here: http://bioconductor.org/packages/release/BiocViews.html#___OrgDb (there are 19 presently available). 
+In my case I am going to use the human species because my genes are filtered based on that
+the organism is "org.Hs.eg.db" --> https://bioconductor.org/packages/release/data/annotation/html/org.Hs.eg.db.html
+
+```{r, message=F, warning=F}
+#organism = "org.Dm.eg.db"
+organism = "org.Hs.eg.db"
+#BiocManager::install(organism, character.only = TRUE)
+library(organism, character.only = TRUE)
+```
+
+
+#Prepare Input
+
+```{r}
+# reading in input from deseq2
+manually_labelled <- read.csv("training-test-held-out-metadata-labels-formatted_withmygeneIDs_unified.csv", header = TRUE)
+final <- read.csv("finalSearch-dataset-metadata-labels-formatted_withmygeneIDs_unified.csv", header = TRUE)
+final_filtered <- read.csv("finalSearch-dataset-metadata-labels-formatted_withmygeneIDs_unified_filtered.csv", header = TRUE)
+```
+
+
+# separate regulatros from non-regulators
+```{r}
+reg_manual <- as.character(manually_labelled$id_human[manually_labelled$labels == 1])
+non_reg_manual <- as.character(manually_labelled$id_human[manually_labelled$labels == 0])
+
+reg_final <- as.character(final$id_human[final$predicted_label == 1])
+non_reg_final <- as.character(final$id_human[final$predicted_label == 0])
+  
+reg_final_filt <- as.character(final_filtered$id_human[final_filtered$predicted_label == 1])
+non_reg_final_filt <- as.character(final_filtered$id_human[final_filtered$predicted_label == 0])
+```
+
+#Create enrichGO object
+Params:  
+  
+**Ontology** Options: ["BP", "MF", "CC"]  biological processes, molecular functions and cellular components
+**keyType** This is the source of the annotation (gene ids). The options vary for each annotation. In the example of *org.Dm.eg.db*, the options are:   
+  
+"ACCNUM"       "ALIAS"        "ENSEMBL"      "ENSEMBLPROT"  "ENSEMBLTRANS" "ENTREZID"      
+"ENZYME"       "EVIDENCE"     "EVIDENCEALL"  "FLYBASE"      "FLYBASECG"    "FLYBASEPROT"   
+"GENENAME"     "GO"           "GOALL"        "MAP"          "ONTOLOGY"     "ONTOLOGYALL"   
+"PATH"         "PMID"         "REFSEQ"       "SYMBOL"       "UNIGENE"      "UNIPROT"  
+  
+Check which options are available with the `keytypes` command, for example `keytypes(org.Dm.eg.db)`. 
+
+```{r}
+keytypes(org.Hs.eg.db)
+```
+Very similar to drosophila to be honest
+```{r}
+org.Hs.eg
+```
+## Create the objects
+
+https://rdrr.io/bioc/clusterProfiler/man/enrichGO.html
+this is where I got to see what each argument is
+
+We are not going to use *universe* because we want to compare with all the genes
+we want to see "are these genes enriched compared to all human genes?"
+
+We are going, for the first analysis use the default ones of *minGSSize* and *maxGSSize* but if we dont get a lot of results we can go lower to 5 in minGSSize
+
+### manual labelled
+```{r}
+go_enrich_reg <- enrichGO(gene = reg_manual,
+                      OrgDb = org.Hs.eg.db, # human, as we set it before
+                      keyType = 'ENTREZID', # our ids are entrez
+                      readable = T, # mapping id to gene name
+                      ont = "BP", # We want to asses biological processes
+                      pvalueCutoff = 0.05, 
+                      qvalueCutoff = 0.10,
+                      pAdjustMethod = "BH") # to control FDR
+
+go_enrich_non_reg <- enrichGO(gene = non_reg_manual,
+                      OrgDb = org.Hs.eg.db, # human, as we set it before
+                      keyType = 'ENTREZID', # our ids are entrez
+                      readable = T, # mapping id to gene name
+                      ont = "BP", # We want to asses biological processes
+                      pvalueCutoff = 0.05, 
+                      qvalueCutoff = 0.10,
+                      pAdjustMethod = "BH") # to control FDR
+```
+
+```{r}
+ora_simplified <- simplify(go_enrich_reg, 
+                           cutoff = 0.7, 
+                           by = "p.adjust")
+dotplot(ora_simplified, showCategory = 10)
+```
+
+```{r}
+# make the plot and store it
+a <- dotplot(go_enrich_reg, 
+             showCategory = 10, 
+             title = "GO Biological Process - Regulators - Manual Curation") +
+  theme_bw() +                                    # cleaner background
+  theme(
+    plot.title = element_text(size = 22, face = "bold", hjust = 0.5),
+    axis.title = element_text(size = 16),
+    axis.text.y = element_text(size = 14),          # GO term labels
+    axis.text.x = element_text(size = 14),
+    legend.text = element_text(size = 11),
+    legend.title = element_text(size = 12)
+  ) +
+  #scale_colour_gradient(low = "red", high = "green") # low p = red = significant
+  scale_colour_viridis_c(option = "viridis", direction = -1)+
+  guides(colour = guide_colourbar())
+
+b <- dotplot(go_enrich_non_reg, 
+             showCategory = 10, 
+             title = "GO Biological Process - No Regulators - Manual Curation") +
+  theme_bw() +                                    # cleaner background
+  theme(
+    plot.title = element_text(size = 22, face = "bold", hjust = 0.5),
+    axis.title = element_text(size = 16),
+    axis.text.y = element_text(size = 14),          # GO term labels
+    axis.text.x = element_text(size = 14),
+    legend.text = element_text(size = 11),
+    legend.title = element_text(size = 12)
+  ) +
+  #scale_colour_gradient(low = "red", high = "green") # low p = red = significant
+  scale_colour_viridis_c(option = "viridis", direction = -1)+
+  guides(colour = guide_colourbar())
+```
+
+### final dataset
+```{r}
+go_enrich_reg_final <- enrichGO(gene = reg_final,
+                      OrgDb = org.Hs.eg.db, # human, as we set it before
+                      keyType = 'ENTREZID', # our ids are entrez
+                      readable = T, # mapping id to gene name
+                      ont = "BP", # We want to asses biological processes
+                      pvalueCutoff = 0.05, 
+                      qvalueCutoff = 0.10,
+                      pAdjustMethod = "BH") # to control FDR
+
+go_enrich_non_reg_final <- enrichGO(gene = non_reg_final,
+                      OrgDb = org.Hs.eg.db, # human, as we set it before
+                      keyType = 'ENTREZID', # our ids are entrez
+                      readable = T, # mapping id to gene name
+                      ont = "BP", # We want to asses biological processes
+                      pvalueCutoff = 0.05, 
+                      qvalueCutoff = 0.10,
+                      pAdjustMethod = "BH") # to control FDR
+```
+
+```{r}
+# make the plot and store it
+c <- dotplot(go_enrich_reg_final, 
+             showCategory = 10, 
+             title = "GO Biological Process - Regulators - Final prediction") +
+  theme_bw() +                                    # cleaner background
+  theme(
+    plot.title = element_text(size = 22, face = "bold", hjust = 0.5),
+    axis.title = element_text(size = 16),
+    axis.text.y = element_text(size = 14),          # GO term labels
+    axis.text.x = element_text(size = 14),
+    legend.text = element_text(size = 11),
+    legend.title = element_text(size = 12)
+  ) +
+  #scale_colour_gradient(low = "red", high = "green") # low p = red = significant
+  scale_colour_viridis_c(option = "viridis", direction = -1)+
+  guides(colour = guide_colourbar())
+
+d <- dotplot(go_enrich_non_reg_final, 
+             showCategory = 10, 
+             title = "GO Biological Process - No Regulators - Final prediction") +
+  theme_bw() +                                    # cleaner background
+  theme(
+    plot.title = element_text(size = 22, face = "bold", hjust = 0.5),
+    axis.title = element_text(size = 16),
+    axis.text.y = element_text(size = 14),          # GO term labels
+    axis.text.x = element_text(size = 14),
+    legend.text = element_text(size = 11),
+    legend.title = element_text(size = 12)
+  ) +
+  #scale_colour_gradient(low = "red", high = "green") # low p = red = significant
+  scale_colour_viridis_c(option = "viridis", direction = -1)+
+  guides(colour = guide_colourbar())
+```
+
+### final dataset filtered
+```{r}
+go_enrich_reg_final_filt <- enrichGO(gene = reg_final_filt,
+                      OrgDb = org.Hs.eg.db, # human, as we set it before
+                      keyType = 'ENTREZID', # our ids are entrez
+                      readable = T, # mapping id to gene name
+                      ont = "BP", # We want to asses biological processes
+                      pvalueCutoff = 0.05, 
+                      qvalueCutoff = 0.10,
+                      pAdjustMethod = "BH") # to control FDR
+
+go_enrich_non_reg_final_filt <- enrichGO(gene = non_reg_final_filt,
+                      OrgDb = org.Hs.eg.db, # human, as we set it before
+                      keyType = 'ENTREZID', # our ids are entrez
+                      readable = T, # mapping id to gene name
+                      ont = "BP", # We want to asses biological processes
+                      pvalueCutoff = 0.05, 
+                      qvalueCutoff = 0.10,
+                      pAdjustMethod = "BH") # to control FDR
+```
+
+```{r}
+# make the plot and store it
+e <- dotplot(go_enrich_reg_final_filt, 
+             showCategory = 10, 
+             title = "GO Biological Process - Regulators - Final prediction Filtered") +
+  theme_bw() +                                    # cleaner background
+  theme(
+    plot.title = element_text(size = 22, face = "bold", hjust = 0.5),
+    axis.title = element_text(size = 16),
+    axis.text.y = element_text(size = 14),          # GO term labels
+    axis.text.x = element_text(size = 14),
+    legend.text = element_text(size = 11),
+    legend.title = element_text(size = 12)
+  ) +
+  #scale_colour_gradient(low = "red", high = "green") # low p = red = significant
+  scale_colour_viridis_c(option = "viridis", direction = -1)+
+  guides(colour = guide_colourbar())
+
+f <- dotplot(go_enrich_non_reg_final_filt, 
+             showCategory = 10, 
+             title = "GO Biological Process - No Regulators - Final prediction Filtered") +
+  theme_bw() +                                    # cleaner background
+  theme(
+    plot.title = element_text(size = 22, face = "bold", hjust = 0.5),
+    axis.title = element_text(size = 16),
+    axis.text.y = element_text(size = 14),          # GO term labels
+    axis.text.x = element_text(size = 14),
+    legend.text = element_text(size = 11),
+    legend.title = element_text(size = 12)
+  ) +
+  #scale_colour_gradient(low = "red", high = "green") # low p = red = significant
+  scale_colour_viridis_c(option = "viridis", direction = -1)+
+  guides(colour = guide_colourbar())
+```
+
+```{r}
+#library(stringr)
+library(scales)
+
+e_v2 <- dotplot(
+  go_enrich_reg_final_filt, 
+  showCategory = 10,
+  title = NULL,
+  color = "p.adjust",  # Keep statistical variable here
+  label_format = 45,
+  #orderBy = "p.adjust" # order the terms by p-adj instead of gene ratio
+) +
+  # Apply Viridis palette to BOTH color and fill aesthetics simultaneously
+  scale_color_viridis_c(
+    option = "viridis", 
+    direction = -1,
+    name = expression(italic(p)[adj]),
+    #labels = label_number(accuracy = 0.01), # Rounds numbers to 2 decimal places
+    aesthetics = c("color", "fill")  # Overrides dot outline and fill
+  ) +
+  theme_bw() + 
+  theme(
+    # Remove all grid lines
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    panel.border = element_rect(color = "black", fill = NA, linewidth = 1),
+    
+    # Remove title space
+    plot.title = element_blank(),
+    
+    # Large text formatting
+    axis.title = element_text(size = 18, face = "bold", color = "black"),
+    axis.text.y = element_text(size = 16, color = "black"),
+    axis.text.x = element_text(size = 16, color = "black"),
+    
+    # Large legend formatting
+    legend.title = element_text(size = 16, face = "bold"),
+    legend.text = element_text(size = 14),
+    legend.key.height = unit(1.2, "cm"),
+    legend.key.width = unit(0.6, "cm")
+  ) +
+  guides(
+    color = guide_colourbar(
+      frame.colour = "black", 
+      ticks.colour = "black", 
+      order = 1
+    ),
+    fill = guide_colourbar(
+      frame.colour = "black", 
+      ticks.colour = "black", 
+      order = 1
+    )
+  )
+
+
+ggsave(
+  filename = "C:\\Users\\amanhel\\OneDrive - The University of Liverpool\\Documents\\PhD\\papers\\dotplot_ora_geneRatio.svg", 
+  plot = e_v2, 
+  width = 12,       # Width in inches
+  height = 8,       # Height in inches
+  units = "in",
+  device = "svg"
+)
+
+```
+#Output
+##Table of results
+```{r}
+head(go_enrich_reg_final_filt)
+head(go_enrich_non_reg_final_filt)
+```
+
+## Upset Plot
+Emphasizes the genes overlapping among different gene sets.
+```{r fig.width=18, fig.height=12}
+BiocManager::install("enrichplot")
+library(enrichplot)
+upsetplot(go_enrich_reg)
+upsetplot(go_enrich_non_reg)
+```
+
+##Barplot
+
+Similar to dotplot but shows gene count as bar length. Less information than dotplot since it doesn't show GeneRatio and p-value simultaneously. Redundant if you have the dotplot.
+
+I will probably not use this, I have run it because it is in the tutorial, but the dotplot is better
+
+```{r echo=TRUE}
+barplot(go_enrich_reg, 
+        drop = TRUE, 
+        showCategory = 10, 
+        title = "GO Biological Pathways",
+        font.size = 8)
+```
+
+##Dotplot
+
+Shows the top enriched GO terms with GeneRatio on x-axis, adjusted p-value as colour, and gene count as dot size
+
+```{r echo=TRUE}
+dotplot(go_enrich_reg, showCategory = 15, title = "Regulators - GO BP")
+dotplot(go_enrich_non_reg, showCategory = 15, title = "Regulators - GO BP")
+```
+
+So ossification is way higher than cartilage development in the hierarchy (ossification is 3 and cartilage development is 16). When something is classified in one of teh child, it gets also classified as the parent so that is why they have a
+very high percentage, and it makes sense as well
+
+With simplify clusters these redundant terms together based on semantic similarity — how similar their gene annotations are — and keeps only the most representative term from each cluster, controlled by the cutoff parameter. A cutoff of 0.7 means terms that are 70% similar in their gene content get collapsed into one.
+
+##Enriched GO induced graph:
+
+Shows the GO hierarchy, how enriched terms relate to each other as a network or tre
+
+To me this is interesting because you get why ossification has so much of the gene ratio
+and count, it is a very high term so it makes sense it has a lot of them
+
+```{r fig.width=12}
+goplot(go_enrich_reg, showCategory = 10)
+```
+
+
+
