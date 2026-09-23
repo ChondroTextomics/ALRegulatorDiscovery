@@ -96,12 +96,12 @@ python fallbackNormaliseMygene.py predictionsWithMetadata.csv predictionsWithMet
 
 _predictionsWithMetadata.csv_
 
-| pmid | number | gene | id | uniprotid | sa | predicted_label | [...] |
+| pmid | number | gene | id | uniprotid | sa | predicted_label | ... |
 |---|---|---|---|---|---|---|---|
-|39764517|7|SPI1|6688|P17947|9606|1|[...]|
-|[...]|[...]|Sox9|20682|Q04887|10090|1|[...]|
-|[...]|[...]|collagen type II alpha 1|-|-|-|0|[...]|
-|[...]|[...]|BMSC-factor|-|-|-|0|[...]|
+|39764517|7|SPI1|6688|P17947|9606|1|...|
+|...|...|Sox9|20682|Q04887|10090|1|...|
+|...|...|collagen type II alpha 1|-|-|-|0|...|
+|...|...|BMSC-factor|-|-|-|0|...|
 
 **Output example**
 
@@ -109,10 +109,10 @@ _predictionsWithMetadata\_mygene.csv_
 
 | pmid | number | gene | id | uniprotid | sa | predicted_label | [...] | id_myGene |
 |---|---|---|---|---|---|---|---|---|
-|39764517|7|SPI1|6688|P17947|9606|1|[...]|-|
-|[...]|[...]|Sox9|20682|Q04887|10090|1|[...]|-|
-|[...]|[...]|collagen type II alpha 1|-|-|-|0|[...]|1280|
-|[...]|[...]|BMSC-factor|-|-|-|0|[...]|-|
+|39764517|7|SPI1|6688|P17947|9606|1|...|-|
+|...|...|Sox9|20682|Q04887|10090|1|...|-|
+|...|...|collagen type II alpha 1|-|-|-|0|...|1280|
+|...|...|BMSC-factor|-|-|-|0|...|-|
 
 _intermediate/mergedDataframe.csv_
 
@@ -167,25 +167,25 @@ _predictionsWithMetadata\_mygene.csv_
 
 | pmid | number | gene | id | uniprotid | sa | predicted_label | [...] | id_myGene |
 |---|---|---|---|---|---|---|---|---|
-|39764517|7|SPI1|6688|P17947|9606|1|[...]|-|
-|[...]|[...]|Sox9|20682|Q04887|10090|1|[...]|-|
-|[...]|[...]|collagen type II alpha 1|-|-|-|0|[...]|1280|
-|[...]|[...]|BMSC-factor|-|-|-|0|[...]|-|
+|39764517|7|SPI1|6688|P17947|9606|1|...|-|
+|...|...|Sox9|20682|Q04887|10090|1|...|-|
+|...|...|collagen type II alpha 1|-|-|-|0|...|1280|
+|...|...|BMSC-factor|-|-|-|0|...|-|
 
 _manuallyLabelledGenes.csv_
 
-| id_human | [...] |
+| id_human | ... |
 |---|---|
-|6662|[...]|
+|6662|...|
 
 **Output example**
 
 _filteredUniqueGeneClassificationLabel\_humanGenes.csv_
 
-| pmid | number | gene | id | uniprotid | sa | predicted_label | [...] | id_myGene | id_human |
+| pmid | number | gene | id | uniprotid | sa | predicted_label | ... | id_myGene | id_human |
 |---|---|---|---|---|---|---|---|---|---|
-|39764517|7|SPI1|6688|P17947|9606|1|[...]|-|6688|
-|[...]|[...]|collagen type II alpha 1|-|-|-|0|[...]|1280|1280|
+|39764517|7|SPI1|6688|P17947|9606|1|...|-|6688|
+|[...]|[...]|collagen type II alpha 1|-|-|-|0|...|1280|1280|
 
 Intermediate files written to `intermediate/`:
 
