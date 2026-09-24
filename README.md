@@ -49,7 +49,7 @@ This repo supports a few different starting points — pick the guide that match
 
 | I want to... | Guide |
 |---|---|
-| Reproduce the results in the paper | [`guides/in-process.md`](guides/in-process.md) |
+| Reproduce the results in the paper | [`guides/replicate-results.md`](guides/replicate-results.md) |
 | Adapt the pipeline to a new biological process | [`guides/in-process-1`](guides/in-process-1) |
 | Use the trained model to classify new abstracts | [`guides/model-inference.md`](guides/model-inference.md) |
 
