@@ -103,4 +103,4 @@ This work was funded by the BBSRC UKRI
 
 ## License
 
-Code in this repository is released under the [MIT License](LICENSE).
+Code in this repository is released under the MIT License.
