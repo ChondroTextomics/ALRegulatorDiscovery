@@ -175,3 +175,96 @@ A sentence is kept only if it has at least one gene from GNorm2 **and** at least
 
 ---
 
+## 2. Initial Labelled Data: Core Set and Validation Set
+
+Before the active learning loop can start, the model needs a first labelled training set (the **core set**) and a fixed **validation set** to evaluate each iteration against. Both are taken from the training–validation pool (`filtered_sentences_training.csv`, the 39,180 sentences from Part 1):
+
+| Set | Size | How it is selected | Purpose |
+|---|---|---|---|
+| **Core set** | 150 sentences | Diversity-based selection over sentence embeddings | Training data for the first (core) model |
+| **Validation set** | 500 sentences | Random sample from the pool left after removing the core set | Evaluating the model at every AL iteration |
+
+Both sets were labelled by the same 2 curators, and both are removed from the pool so that the AL loop never selects them again.
+
+The sizes are in **sentences** (rows of `filtered_sentences_training.csv`). A sentence can contain several genes, so the number of labelled gene instances in each set is larger than the number of sentences. As well, some sentences did not have anmy real genes (as in the labelling processes entiteis localised as genes by GNorm2 that were mistakes were reported and removed so the final number of sentences is not the same as the selected ones)
+
+**Files on Zenodo** (see [`data/README.md`](../data/README.md)):
+
+- The labelling guidelines used by the curators. The rules applied to these two sets are also in [`labelling/AnnotationrulesPerDataset.md`](../labelling/AnnotationrulesPerDataset.md).
+- The labelled files of each curator, and the final consensus labelled file, for both the core set and the validation set
+
+### 2.1 Select the core set (`al_loop/embedingsSBioBERT.py` + `al_loop/coreSetExtraction.py`)
+
+The core set is chosen to cover the variety of sentences in the pool as widely as possible, rather than at random. This gives the first model a varied starting point.
+
+```bash
+python embedingsSBioBERT.py filtered_sentences_training.csv training_embeddings.csv \
+  -tokenizer pritamdeka/S-BioBert-snli-multinli-stsb \
+  -model pritamdeka/S-BioBert-snli-multinli-stsb
+```
+
+Then select 150 sentences with a greedy core-set selection. The script starts from one random sentence and keeps adding the sentence that is furthest (cosine distance) from the ones already selected:
+
+```bash
+python coreSetExtraction.py \
+  -embeddings training_embeddings.csv \
+  -selection 150 \
+  -metadata filtered_sentences_training.csv \
+  -output coreset.csv
+```
+
+`-metadata` is the same file that was embedded, so `coreset.csv` keeps all of the gene columns (`pmid, number, text, gene, start, end, id, uniprotid, sa`).
+
+The study used the script's default seed (`-seed 42`), which sets the random sentence the selection starts from.
+
+### 2.2 Select the validation set
+
+The 150 core-set sentences were removed from the pool, and 500 sentences were then drawn at random from what was left. This was done with a one-off Python command, not with a script in this repository, so it cannot be re-run from here. To replicate the study, use the validation set archived on Zenodo.
+
+### 2.3 Label both sets (`labelling/`)
+
+The core set and the validation set are labelled separately but in exactly the same way. The commands below use `SET` for either `coreset` or `validation`. Each gene in each sentence gets a label (regulator of chondrogenesis or not) by following the labelling guidelines.
+
+**1. Convert to the labelling app format** (`modelToLabellingFormatting.py`). This gives one row per gene. `-group` keeps the genes of the same sentence together (for faster labelling) and shuffles the order of the sentences:
+
+```bash
+python modelToLabellingFormatting.py -input ${SET}.csv -output ${SET}_appFormat.csv -group
+```
+
+**2. Label independently.** Each curator gets their own copy of `${SET}_appFormat.csv`, loads it in `labelling_shiny_app.R`, and labels every gene without seeing the other curator's labels to avoid bias.
+
+```bash
+Rscript -e "shiny::runApp('labelling_shiny_app.R', launch.browser = TRUE)"
+```
+
+**3. Collect the disagreements** (`labellingToRevisionFormatting.py`). This merges the two curators' files and keeps only the sentences where the labels differ. It also adds an empty `Final` row for each of them, to be filled in during the revision:
+
+```bash
+python labellingToRevisionFormatting.py \
+  -files ${SET}_appFormat_curator1.csv ${SET}_appFormat_curator2.csv \
+  -curators Curator1 Curator2 \
+  -out ${SET}_revision.csv \
+  -group
+```
+
+**4. Reach a consensus.** The curators review each disagreement together in `revision_shiny_app.R` and fill in the `Final` rows with the agreed label:
+
+```bash
+Rscript -e "shiny::runApp('revision_shiny_app.R', launch.browser = TRUE)"
+```
+
+**5. Build the consensus labelled file** (`fusingAgreementData.py`). This takes the genes both curators already agreed on (from one curator's file) and adds the `Final` decisions for the rest:
+
+```bash
+python fusingAgreementData.py \
+  -fileCurator ${SET}_appFormat_curator1.csv \
+  -fileAgree ${SET}_revision.csv \
+  -curatorAgree Final \
+  -fileOut ${SET}_labelled.csv
+```
+
+The per-curator files (step 2) and the consensus file (step 5) are the ones archived on Zenodo for both sets. The per-curator files can also be used to calculate inter-annotator agreement.
+
+### 2.4 Remove the labelled sentences from the pool
+
+The final unlabelled pool for the AL loop is the training–validation pool minus the core set and the validation set. Like the random sampling, this removal was done with a one-off Python command that is not part of the repository. To replicate the study, take the core-set and validation files from Zenodo and remove their sentences from `filtered_sentences_training.csv`, matching on `pmid` + `number`.
