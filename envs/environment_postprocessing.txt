@@ -1,0 +1,12 @@
+## Environment — `postprocessing`
+
+### Python
+- Python Python 3.12.10
+- See [`requirements_python_postprocessing.txt `](./requirements_python_postprocessing.txt ) for package versions
+
+### R
+- R 4.5.2
+- See [`requirements_R_postprocessing.txt`](./requirements_R_postprocessing.txt) for package versions
+
+### System
+System used Windows 11
