@@ -25,16 +25,21 @@ The code is split into two layers:
 ## Repository structure
 
 ```
-al-regulator-discovery/
-├── pipeline/            # reusable NLP + active learning + classifier code
-├── chondrogenesis/      # chondrogenesis-specific config, scripts, GO analysis
-├── labelling-app/       # curator annotation tool
-├── docs/                # guides (see below)
-├── envs/                # per-task dependency/environment files
+ALRegulatorDiscovery/
+├── al_loop/                   # reusable NLP + active learning + classifier code
+├── benchmark_comparison/      # scripts used for LLM and logistic regression model usage
+├── benchmark_models/          # models used as comparison with the main model used in al_loop
+├── data/                      # link to data repository
+├── envs/                      # per-task dependency/environment files
+├── guides/                    # specific guides of the usage of the scripts for the project
+├── labelling/                 # scrips used to label gene entities
+├── model/                     # link to the final model weights produced by the al_loop
+├── pipeline_process_text/     # scripts used to produce the input for al_loop and labelling
+├── postprocessing/            # scripts used to analyse the results of models as well as creation of different plots
 └── README.md
 ```
 
-> Note: no containerized environment (e.g. Docker) is provided. Each task has its own environment file under `envs/` — see the relevant guide for setup instructions.
+**Note: no containerized environment (e.g. Docker) is provided. Each task has its own environment file under `envs/`.**
 
 ## Getting started
 
@@ -44,18 +49,27 @@ This repo supports a few different starting points — pick the guide that match
 
 | I want to... | Guide |
 |---|---|
-| Reproduce the results in the paper | [`docs/reproduce-paper.md`](docs/reproduce-paper.md) |
-| Adapt the pipeline to a new biological process | [`docs/new-process.md`](docs/new-process.md) |
+| Reproduce the results in the paper | [`guides/in-process.md`](guides/in-process.md) |
+| Adapt the pipeline to a new biological process | [`guides/in-process-1`](guides/in-process-1) |
 | Use the trained model to classify new abstracts | [`guides/model-inference.md`](guides/model-inference.md) |
 
 ### 2. Set up an environment
 
-Each task has its own environment file under `envs/` (no shared container). Install the one relevant to your use case, e.g.:
+Each task has its own environment file under `envs/`. Install the one relevant to your use case, e.g.:
 
 ```bash
 python -m venv venv
 source venv/bin/activate
 pip install -r envs/<task>-requirements.txt
+```
+
+```r
+install.packages("renv")
+renv::restore(lockfile = "envs/<task>-renv.lock")
+```
+
+```bash
+Rscript -e 'install.packages(readLines("envs/<task>-r-requirements.txt"), repos = "https://cloud.r-project.org")'
 ```
 
 ### 3. Get the data and model weights
@@ -66,9 +80,8 @@ This repo does **not** include trained weights or datasets. See [Data & Models](
 
 | Artifact | Location |
 |---|---|
-| Trained PubMedBERT classifier | Hugging Face Hub — *link TBD* |
-| Training data, per-curator + aggregated labels, benchmarking results | Zenodo — *DOI TBD (draft available)* |
-| Raw PubMed data | Shared as PMIDs only (not abstract text), via the Zenodo record above |
+| Trained PubMedBERT classifier | [Hugging Face Hub Model Link](https://huggingface.co/amav/pubmedbert-chondrogenesis-classifier)|
+| Training data, per-curator + aggregated labels, benchmarking results | [Zenodo Link](https://doi.org/10.5281/zenodo.22746090) |
 
 ## Citing this work
 
@@ -78,4 +91,4 @@ If you use this pipeline or the associated model/data, please cite:
 
 ## Questions
 
-Open an issue on this repo, or contact [maintainer contact — TBD].
+Open an issue on this repo, or contact a.valdes@liverpool.ac.uk.
