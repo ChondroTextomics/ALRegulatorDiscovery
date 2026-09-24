@@ -12,16 +12,16 @@ Starting from PubMed abstracts, the pipeline:
 
 1. Splits text into sentences and identifies gene mentions.
 2. Uses an active-learning loop (with a curator labelling app) to iteratively annotate a small set of sentences.
-3. Trains a PubMedBERT-based classifier to predict, per gene, whether it acts as a chondrogenesis regulator.
-4. Applies the trained classifier across the full corpus to surface novel candidate regulators — including genes absent from existing Gene Ontology annotations.
-5. Benchmarks that classifier against open-weight LLMs (Qwen3, Llama 3.1) under a single-GPU, local-inference constraint.
+3. Trains a PubMedBERT-based classifier to predict, per gene mention, whether it acts as a chondrogenesis regulator or not.
+4. Benchmarks that classifier against open-weight LLMs (Qwen3, Llama 3.1) under a single-GPU, local-inference constraint.
+5. Applies the trained classifier across the full corpus to surface novel candidate regulators, including genes absent from existing Gene Ontology annotations.
 
-The code is split into two layers:
+The code is organised so the core method is reusable beyond chondrogenesis:
 
-- **`pipeline/`** — reusable, process-agnostic code (sentence splitting, active learning loop, classifier training/inference, evaluation). Not specific to chondrogenesis or cartilage.
-- **`chondrogenesis/`** — the application of that pipeline to this project: config, gene lists, GO enrichment analysis, and scripts to reproduce the paper's results.
-- **`labelling-app/`** — the curator-facing annotation tool used during active learning rounds.
+- **Process-agnostic:** `pipeline_process_text/`, `al_loop/`, `labelling/`
+- **Project-specific analysis:** `postprocessing/`, `benchmark_comparison/`
 
+The core method is not specific to cartilage biology and can be adapted to other biological processes (see [Getting started](#getting-started)).
 ## Repository structure
 
 ```
@@ -32,7 +32,7 @@ ALRegulatorDiscovery/
 ├── data/                      # link to data repository
 ├── envs/                      # per-task dependency/environment files
 ├── guides/                    # specific guides of the usage of the scripts for the project
-├── labelling/                 # scrips used to label gene entities
+├── labelling/                 # scripts used to label gene entities
 ├── model/                     # link to the final model weights produced by the al_loop
 ├── pipeline_process_text/     # scripts used to produce the input for al_loop and labelling
 ├── postprocessing/            # scripts used to analyse the results of models as well as creation of different plots
@@ -55,7 +55,9 @@ This repo supports a few different starting points — pick the guide that match
 
 ### 2. Set up an environment
 
-Each task has its own environment file under `envs/`. Install the one relevant to your use case, e.g.:
+Each task has its own environment (Python or R). No container image (e.g. Docker) is provided. See [`envs/`](envs/) for setup instructions for each task.
+
+Install the one relevant to your use case, e.g.:
 
 ```bash
 python -m venv venv
@@ -76,6 +78,8 @@ Rscript -e 'install.packages(readLines("envs/<task>-r-requirements.txt"), repos 
 
 This repo does **not** include trained weights or datasets. See [Data & Models](#data--models) below.
 
+These and more links can be found in `/benchmark_models`, `/model` and `/data`.
+
 ## Data & Models
 
 | Artifact | Location |
@@ -92,3 +96,11 @@ If you use this pipeline or the associated model/data, please cite:
 ## Questions
 
 Open an issue on this repo, or contact a.valdes@liverpool.ac.uk.
+
+## Acknowledgements
+ 
+This work was funded by the BBSRC UKRI
+
+## License
+
+Code in this repository is released under the [MIT License](LICENSE).
