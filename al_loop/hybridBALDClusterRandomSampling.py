@@ -1,5 +1,6 @@
 # Script to get different types of sampling
 # from a dataframe with cluster and also BALD scores
+# it can be with weighted or just bald score
 
 ## packages
 import argparse
@@ -14,6 +15,7 @@ parser.add_argument("-distance", help = "folder where the distance between sampl
 parser.add_argument("-sampling", help = "number of samples to take", required = True, type = int)
 parser.add_argument("-out", help = "name of the file to save the selected sentences", required = True)
 parser.add_argument("-seed", help = "random seed", type = int, required = True)
+parser.add_argument("-weights", help = "if BALD needs to be multiplied by some factor (weights), give the column that will the factor")
 args = parser.parse_args()
 
 # checks
@@ -24,10 +26,40 @@ if not os.path.isfile(args.input):
 else:
     output_pool = pd.read_csv(args.input)
 
-    if any(column not in output_pool.columns for column in ["pmid", "number", "BALD", "outlier", "medoid", "weights"]):
-        print(f'ERROR: columns "pmid", "number", "BALD", "weights", "medoid" and "outlier" need to be in file {args.input}')
+    if any(column not in output_pool.columns for column in ["pmid", "number", "BALD", "outlier", "medoid", "cluster"]):
+        print(f'ERROR: columns "pmid", "number", "BALD", "cluster", "medoid" and "outlier" need to be in file {args.input}')
         sys.exit(1)
-    
+
+    # Check that all the rows have a BALD value
+    if output_pool["BALD"].isna().any():
+        print(f'ERROR: column "BALD" has {output_pool["BALD"].isna().sum()} rows without value in file {args.input}')
+        sys.exit(1)
+
+    # Check that the BALD values are numeric
+    if not pd.api.types.is_numeric_dtype(output_pool["BALD"]):
+        print(f'ERROR: column "BALD" needs to be numeric in file {args.input}')
+        sys.exit(1)
+
+    if args.weights:
+        if args.weights not in output_pool.columns:
+            print(f"ERROR: column {args.weights} needs to be in file {args.input}")
+            sys.exit(1)
+
+        # Check that the weights are numeric
+        if not pd.api.types.is_numeric_dtype(output_pool[args.weights]):
+            print(f"ERROR: column {args.weights} needs to be numeric in file {args.input}")
+            sys.exit(1)
+
+        # Check that all the rows have a weight
+        if output_pool[args.weights].isna().any():
+            print(f"ERROR: column {args.weights} has {output_pool[args.weights].isna().sum()} rows without value in file {args.input}")
+            sys.exit(1)
+
+        # Check that the weights values are numeric
+        if not pd.api.types.is_numeric_dtype(output_pool[args.weights]):
+            print(f'ERROR: column "{args.weights}" needs to be numeric in file {args.input}')
+            sys.exit(1)
+
     # These ones are added and we are going to change their values
     output_pool["selected"] = False
     output_pool["reason"] = pd.NA
@@ -80,7 +112,7 @@ def find_nearest(name_file_distances, indexes_compare):
     # Now we take the min value of those distances
     return int(distances_compare.idxmin(axis = 1).iat[0])
 
-def cluster_uncertain_treatment(cluster_dataframe):
+def cluster_uncertain_treatment(cluster_dataframe, column_cluster):
     """
     Create the selection uncertain dataframe for that cluster
     which will be formed by the most uncertain score of each
@@ -91,7 +123,7 @@ def cluster_uncertain_treatment(cluster_dataframe):
     selected = []
 
     for _, group_sentence in cluster_dataframe.groupby(by = ["pmid", "number"]):
-        selected.append(group_sentence["BALD_weighted"].idxmax())
+        selected.append(group_sentence[column_cluster].idxmax())
 
     return cluster_dataframe.loc[selected]
 
@@ -149,7 +181,8 @@ uncertain_samples = int(min_samples - 2 - random_samples)
 
 ## ---------------------------------------------------------
 ## Produce the weighted BALD for uncertainty sampling
-output_pool["BALD_weighted"] = output_pool["BALD"]*output_pool["weights"]
+if args.weights:
+    output_pool["BALD_weighted"] = output_pool["BALD"]*output_pool[args.weights]
 
 ## ---------------------------------------------------------
 ## Diversity Sampling
@@ -266,13 +299,19 @@ if uncertain_samples > 0:
         clean_cluster_df = clean_cluster_from_selected(output_pool[(output_pool["cluster"] == cluster_label) & (output_pool["selected"] == False)], output_pool[output_pool["selected"] == True])
 
         # Retrieve the most uncertain scores from each sentence (pmid+number)
-        sentence_cluster_ranked = cluster_uncertain_treatment(clean_cluster_df)
+        if args.weights:
+            sentence_cluster_ranked = cluster_uncertain_treatment(clean_cluster_df, "BALD_weighted")
+        else:
+            sentence_cluster_ranked = cluster_uncertain_treatment(clean_cluster_df, "BALD")
         # This returns us a dataframe with the biggest uncertain sample of each sentence
 
         # Select the uncertain samples
         # Get the biggest uncertain ones
         if len(sentence_cluster_ranked) >= uncertain_samples:
-            biggest_uncertain = sentence_cluster_ranked.nlargest(uncertain_samples, "BALD_weighted").index
+            if args.weights:
+                biggest_uncertain = sentence_cluster_ranked.nlargest(uncertain_samples, "BALD_weighted").index
+            else:
+                biggest_uncertain = sentence_cluster_ranked.nlargest(uncertain_samples, "BALD").index
             output_pool.loc[biggest_uncertain, "selected"] = True
             output_pool.loc[biggest_uncertain, "reason"] = "uncertainty"
         else: # We take them all, no random samples from this cluster
@@ -323,9 +362,12 @@ if remaining_samples > 0:
 
     if remaining_uncertain > 0:
         # Get the most uncertain ones out of all of them
-        cluster_bald_treated = cluster_uncertain_treatment(clean_cluster_after_selection)
-
-        biggest_uncertain_remained = list(cluster_bald_treated.nlargest(remaining_uncertain, "BALD_weighted").index)
+        if args.weights:
+            cluster_bald_treated = cluster_uncertain_treatment(clean_cluster_after_selection, "BALD_weighted")
+            biggest_uncertain_remained = list(cluster_bald_treated.nlargest(remaining_uncertain, "BALD_weighted").index)
+        else:
+            cluster_bald_treated = cluster_uncertain_treatment(clean_cluster_after_selection, "BALD")
+            biggest_uncertain_remained = list(cluster_bald_treated.nlargest(remaining_uncertain, "BALD").index)
         output_pool.loc[biggest_uncertain_remained, "selected"] = True
         output_pool.loc[biggest_uncertain_remained, "reason"] = "uncertainty_remaining"
     

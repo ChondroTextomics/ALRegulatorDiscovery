@@ -73,15 +73,15 @@ python batchingPoolDataset.py -input <path_pool_file> -batches <amount_final_bat
 
 | Argument | Type | Required | Description |
 |---|---|---|---|
-| `-input` | `str` | Yes | file to convert into batches |
-| `-batches` | `int` | Yes | number of batches to split the file into |
-| `-out` | `str` | Yes | folder where the batches will be saved (created if it doesn't exist) |
-| `-prefix` | `str` | Yes | prefix of the file name, followed by the batch number and extension |
+| `-input` | `str` | Yes | path to the input CSV file to split (must have a header row) |
+| `-batches` | `int` | Yes | number of batches to split the file into; each batch gets at most `ceil(rows / batches)` rows |
+| `-out` | `str` | Yes | output folder for the batch files (created if it doesn't exist) |
+| `-prefix` | `str` | Yes | file name prefix for the batches; files are saved as `<prefix>_<batch_number>.csv`, numbered from `0` (e.g. `-prefix pool` gives `pool_0.csv`, `pool_1.csv`, ...) |
 
 **Input example**
 
 ```bash
-python batchingPoolDataset.py -input  pool_short_nlpFormat.csv -out pool_short_batches -batches 3 -prefix pool_short_batch
+python batchingPoolDataset.py -input pool_short_nlpFormat.csv -out pool_short_batches -batches 3 -prefix pool_short_batch
 ```
 
 _pool\_short\_nlpFormat.csv_
@@ -95,7 +95,9 @@ _pool\_short\_nlpFormat.csv_
 
 **Output example**
 
-_pool\_short\_batchs/pool\_short\_batch\_0.csv_
+The input file is split, in its original row order, into `-batches` consecutive chunks of at most `ceil(rows / batches)` rows each (the last batch may be smaller), and each chunk is saved with the same columns as the input to `-out` as `<prefix>_<batch_number>.csv`. The run above produces `pool_short_batch_0.csv`, `pool_short_batch_1.csv` and `pool_short_batch_2.csv` inside `pool_short_batches`.
+
+_pool\_short\_batches/pool\_short\_batch\_0.csv_
 
 |pmid|number|masked|labels|
 |---|---|---|---|
@@ -579,20 +581,35 @@ python hybridBALDClusterRandomSampling.py -input <file_bald_cluster_predictions>
                                           -distance <distance_folder> \
                                           -sampling <number_of_samples> \
                                           -out <path_output_file> \
-                                          -seed <random_seed>
+                                          -seed <random_seed> \
+                                          [-weights <weights_column>]
 ```
 
 **Arguments**
 
 | Argument | Type | Required | Description |
 |---|---|---|---|
-| `-input` | `str` | Yes | file path with the BALD and cluster info (must contain `pmid`, `number`, `BALD`, `weights`, `cluster`, `medoid` and `outlier` columns) |
+| `-input` | `str` | Yes | file path with the BALD and cluster info (must contain `pmid`, `number`, `BALD`, `cluster`, `medoid` and `outlier` columns, plus the column given in `-weights` if used; `BALD` must be numeric and have no missing values) |
 | `-distance` | `str` | Yes | folder with the per-sample distance files, named `sample_<index>.csv` where `<index>` is the row index of that sentence in `-input` |
 | `-sampling` | `int` | Yes | total number of sentences to select (must be at least twice the number of clusters, and no larger than the number of unique `pmid`+`number` sentences) |
 | `-out` | `str` | Yes | name of the file where the selected sentences will be saved (the program stops if this file already exists) |
 | `-seed` | `int` | Yes | random seed used for the random-sampling steps |
+| `-weights` | `str` | No | name of the column in `-input` that `BALD` is multiplied by to get the uncertainty score (must be numeric and have no missing values). If not given, the uncertainty sampling uses the plain `BALD` score |
 
 **Input example**
+
+With weights (the uncertainty sampling uses `BALD * weights`):
+
+```bash
+python hybridBALDClusterRandomSampling.py -input results_loop/pool_short_classification_fusedResults.csv \
+                                          -distance cosine_distances_folder \
+                                          -sampling 15 \
+                                          -out pool_short_hybridSamplingResults.csv \
+                                          -seed 2 \
+                                          -weights weights
+```
+
+Without weights (the uncertainty sampling uses `BALD` directly, so the `weights` column is not needed in `-input`):
 
 ```bash
 python hybridBALDClusterRandomSampling.py -input results_loop/pool_short_classification_fusedResults.csv \
@@ -619,9 +636,9 @@ _cosine\_distances\_folder/sample\_0.csv_
 
 **Output example**
 
-For each cluster the script assigns roughly `-sampling / number_of_clusters` sentences, split into three groups: diversity samples (the cluster's medoid and outlier rows, or their nearest non-diversity neighbor from the same cluster's distance files if the medoid/outlier sentence was already claimed by another cluster), uncertainty samples (the sentences with the highest `BALD_weighted = BALD * weights` score, keeping only the most uncertain row per unique `pmid`+`number`), and random samples (about 10% of the cluster's quota, drawn with `-seed`). If some clusters run out of sentences before reaching their quota, the shortfall is made up from the remaining unselected sentences across all clusters, split evenly between extra uncertainty and extra random picks. Every input row is kept in the output, with two columns added: `BALD_weighted`, and `selected`/`reason` marking whether the row was chosen and why (`diversity`, `uncertainty`, `random`, `uncertainty_remaining` or `random_remaining`; unselected rows get `False`/`NA`).
+For each cluster the script assigns roughly `-sampling / number_of_clusters` sentences, split into three groups: diversity samples (the cluster's medoid and outlier rows, or their nearest non-diversity neighbor from the same cluster's distance files if the medoid/outlier sentence was already claimed by another cluster), uncertainty samples (the sentences with the highest uncertainty score, keeping only the most uncertain row per unique `pmid`+`number`; the score is `BALD_weighted = BALD * <weights column>` when `-weights` is given, and the plain `BALD` otherwise), and random samples (about 10% of the cluster's quota, drawn with `-seed`). If some clusters run out of sentences before reaching their quota, the shortfall is made up from the remaining unselected sentences across all clusters, split evenly between extra uncertainty and extra random picks. Every input row is kept in the output, with the columns `selected`/`reason` added, marking whether the row was chosen and why (`diversity`, `uncertainty`, `random`, `uncertainty_remaining` or `random_remaining`; unselected rows get `False`/`NA`). When `-weights` is given, the `BALD_weighted` column is also added; without it, that column is not in the output.
 
-_pool\_short\_hybridSamplingResults.csv_
+_pool\_short\_hybridSamplingResults.csv_ (run with `-weights weights`)
 
 |pmid|number|text|BALD|labels|logits_0|logits_1|predicted_label|prob_0|prob_1|prob_int|weights|cluster|medoid|outlier|selected|reason|BALD_weighted|
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|

@@ -93,7 +93,6 @@ if not os.path.exists(args.out):
     os.makedirs(args.out)
     print(f"Directory {args.out} successfully created")
 
-# New checks
 # Check that the warmup is a fraction
 if args.warmup < 0 or args.warmup > 1:
     print("The warmup argument needs to be a fraction (range [0, 1])")
@@ -173,9 +172,7 @@ def batch_indexes_generator(lst, n):
 # The original loss function is https://github.com/huggingface/transformers/blob/052e652d6d53c2b26ffde87e039b723949a53493/src/transformers/trainer.py#L3618
 # this way we can base what we need to return and get in the function from this one
 def create_weighted_loss(weights):
-    # def my_weighted_loss(outputs, labels, return_outputs = False, num_items_in_batch = None):
     def my_weighted_loss(outputs, labels, return_outputs = False, num_items_in_batch = None): # The num_items_in_batch is neccessary to rewrite the loss function
-        print(num_items_in_batch)
         logits = outputs.logits
         loss_fct = torch.nn.CrossEntropyLoss(weight = weights.to(logits.device).float(), #  we need to put it as a float or it will give an error
                                              label_smoothing = 0.1) # this is to prevent overfitting
@@ -205,11 +202,11 @@ activeLearningDataset = pd.concat([train, pool], ignore_index = True)
 # Initialize the training arguments for the model
 # https://huggingface.co/docs/transformers/v4.56.2/en/main_classes/trainer#transformers.TrainingArguments
 # Change train_args in v3 to insert the new parameters
-train_args = TrainingArguments(output_dir = os.path.join(args.out, f"iteration_{args.iteration}"), # output directory, not sure for what
+train_args = TrainingArguments(output_dir = os.path.join(args.out, f"iteration_{args.iteration}"), # output directory
                                num_train_epochs = args.epoch, # epochs for the training, we are going to set it
                                per_device_train_batch_size = args.batch, # batch size of the training set
                                per_device_eval_batch_size = 4,
-                               weight_decay = args.weightDecay, # strength of weight decay, I am not sure how much will this affect
+                               weight_decay = args.weightDecay, # strength of weight decay
                                report_to = [],  # disable all loggers, including wandb
                                seed = args.seed,
                                logging_steps = 1,
@@ -290,10 +287,6 @@ else: # We do the default loss function
                                   args = train_args,
                                   train_dataset = active_set,
                                   processing_class = tokenizer)
-
-# We dont have to change anyhthing else
-# we dont need to chnage the class of the trainer
-# that is something old and they inserted the compute_loss_func
 
 ## ---------------------------------------
 ## Training Model
