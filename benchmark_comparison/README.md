@@ -416,3 +416,94 @@ _(The numbers of the output tables are only illustrative.)_
 - The AUC-ROC is computed with the probability of the positive class, while precision, recall and F1 are computed with the predicted labels, using `-positive_class` as the positive label. If the labels column is numeric the positive class is converted to `int`.
 - A bootstrapped dataset with only one class in the true labels makes the AUC-ROC impossible to compute and the script will fail. This is unlikely with a reasonable amount of data, but it can happen in cluster mode with few clusters.
 - The confidence interval is the percentile bootstrap interval with `alpha = 0.05` (percentiles 2.5 and 97.5 of the metric across the iterations).
+
+---
+
+### `trainingProductionModel.py`
+
+Trains the final (production) PubMedBERT classification model and saves it, nothing else. It is based on `trainingModelTestPredictionBALDPool.py` from the `al_loop` folder, and uses the same tokenization (special tokens `[GENE]`, `[TARGET]`, `[/TARGET]`, padding/truncation to 250 tokens), training arguments and optional class-weighted loss function, but:
+- there is no test prediction and no pool (BALD) scoring, only the training step,
+- the model is not converted to a bayesian model (no MC dropout) and the standard HuggingFace `Trainer` is used instead of the BAAL wrapper, so `baal` is not needed,
+- the time spent in each step is tracked and saved in a text file.
+
+**Usage**
+```bash
+python trainingProductionModel.py -train <file_training_data> \
+                                  -out <folder_results> \
+                                  -model <path_hf_model> \
+                                  -tokenizer <path_hf_tokenizer> \
+                                  -batch <training_batch> \
+                                  -lr <learning_rate> \
+                                  -warmup <warmup_step_fraction> \
+                                  -weightDecay <weight_decay> \
+                                  -weightLossFunction <loss_function> \
+                                  [-epoch <epochs>] \
+                                  [-seed <random_seed>]
+```
+
+**Arguments**
+
+| Argument | Type | Required | Description |
+|---|---|---|---|
+| `-train` | `str` | Yes | path to the training dataset (must contain `text` and `labels` columns) |
+| `-out` | `str` | Yes | directory that will hold all of the outputs (trained model, time tracking, ...). It is created if it does not exist |
+| `-model` | `str` | Yes | path to the model folder |
+| `-tokenizer` | `str` | Yes | path to the tokenizer folder |
+| `-batch` | `int` | Yes | number of samples per batch during training |
+| `-lr` | `float` | Yes | learning rate during training |
+| `-warmup` | `float` | Yes | ratio of steps used as warmup (fraction in `[0, 1]`) |
+| `-weightDecay` | `float` | Yes | weight decay applied during training |
+| `-weightLossFunction` | `str` | Yes | whether to use a balanced weighted loss function during training (`True`/`False`, case-insensitive) |
+| `-epoch` | `int` | No | number of epochs to train for (default `2`) |
+| `-seed` | `int` | No | random seed (default `26`) |
+
+**Input example**
+
+```bash
+python trainingProductionModel.py -train sentencesToLabelShort_labelled_nlpFormat.csv \
+                                  -out ./production_model \
+                                  -seed 9 \
+                                  -model /home/user/nlp_study/models/pubmedbert/model \
+                                  -tokenizer /home/user/nlp_study/models/pubmedbert/tokenizer \
+                                  -epoch 1 \
+                                  -batch 8 \
+                                  -lr 1e-4 \
+                                  -warmup 0 \
+                                  -weightDecay 0.001 \
+                                  -weightLossFunction False
+```
+
+_sentencesToLabelShort\_labelled\_nlpFormat.csv_ (only the `text` and `labels` columns are used, the rest are ignored)
+
+|pmid|number|text|labels|
+|---|---|---|---|
+|1952598|2|Synergistic action of [GENE] and [TARGET][GENE][/TARGET].|0|
+|1952598|2|Synergistic action of [TARGET][GENE][/TARGET] and [GENE].|1|
+|2919122|1|Effect of [TARGET][GENE][/TARGET]/insulin-like growth factor I and growth hormone on cultured growth plate and articular chondrocytes.|0|
+|...|...|...|...|
+
+**Output example**
+
+The following files are created in `production_model`:
+
+```text
+production_model/
+├── trained_model/               (model weights, config and tokenizer, loadable with from_pretrained)
+│   ├── config.json
+│   ├── model.safetensors
+│   ├── tokenizer.json
+│   ├── tokenizer_config.json
+│   ├── special_tokens_map.json
+│   └── vocab.txt
+├── final_model_out_dir/         (output_dir of the HuggingFace Trainer, holds the checkpoints if any are saved)
+└── time_tracking.txt
+```
+
+_time\_tracking.txt_
+
+```text
+time packages: 12.34s
+Model load time: 3.21s
+Total time: 845.67s
+Time to train the model: 790.12s
+```
