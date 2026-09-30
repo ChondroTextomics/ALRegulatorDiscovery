@@ -10,8 +10,6 @@ import pandas as pd
 import kmedoids
 import numpy as np
 from sklearn.metrics.pairwise import cosine_distances
-import psutil
-import math
 
 ## Arguments
 parser = argparse.ArgumentParser()
@@ -41,12 +39,6 @@ if os.path.isfile(args.cosineDistances):
 else:
     print(f"ERROR: file {args.cosineDistances} cannot be found")
     sys.exit(1)
-
-## Functions
-def print_memory_usage(tag=""):
-    process = psutil.Process(os.getpid())
-    mem_gb = process.memory_info().rss / 1e9
-    print(f"[{tag}] Memory usage: {mem_gb:.2f} GB")
 
 def kmedioids_clustering_cosine(embeddings, number_clusters, seed):
   # Get the clustering model
