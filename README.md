@@ -50,7 +50,7 @@ This repo supports a few different starting points — pick the guide that match
 | I want to... | Guide |
 |---|---|
 | Reproduce the results in the paper | [`guides/replicate-results.md`](guides/replicate-results.md) |
-| Adapt the pipeline to a new biological process | [`guides/in-process-1`](guides/in-process-1) |
+| Adapt the pipeline to a new biological process | [`guides/new-process-application.md`](guides/new-process-application.md) |
 | Use the trained model to classify new abstracts | [`guides/model-inference.md`](guides/model-inference.md) |
 
 ### 2. Set up an environment
@@ -91,7 +91,12 @@ These and more links can be found in `/benchmark_models`, `/model` and `/data`.
 
 If you use this pipeline or the associated model/data, please cite:
 
-> *Citation to be added on publication.*
+Anhel, A.-M., Peffers, M. J., Young, D., & Soul, J. (2026).
+
+**A low-annotation-budget PubMedBERT classifier for chondrogenesis regulator discovery via active learning (p. 2026.09.24.754045). bioRxiv.**
+
+_https://doi.org/10.64898/2026.09.24.754045_
+
 
 ## Questions
 
